@@ -19,9 +19,9 @@
 import flax.linen as nn
 import jax
 import jax.numpy as jnp
-
 from language.mentionmemory.utils import default_values
 from language.mentionmemory.utils.custom_types import Array, Dtype, PRNGKey, Shape  # pylint: disable=g-multiple-import
+from typing import Callable, Dict
 
 
 class Embed(nn.Module):

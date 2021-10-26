@@ -24,6 +24,7 @@ from language.mentionmemory.modules import topk_similarity_layer
 from language.mentionmemory.utils import jax_utils as jut
 from language.mentionmemory.utils.custom_types import Array, Dtype  # pylint: disable=g-multiple-import
 import ml_collections
+from typing import Optional
 
 _LARGE_NUMBER = 1e10
 

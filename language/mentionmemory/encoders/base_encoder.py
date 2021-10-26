@@ -15,7 +15,6 @@
 """Defines abstract encoder class used as base for other encoders in package."""
 
 
-
 import flax.linen as nn
 import jax
 from language.mentionmemory.utils import checkpoint_utils

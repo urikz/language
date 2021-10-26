@@ -23,6 +23,7 @@ from language.mentionmemory.modules import retrieval_update_layers
 from language.mentionmemory.utils import jax_utils as jut
 from language.mentionmemory.utils.custom_types import Array, Dtype  # pylint: disable=g-multiple-import
 import ml_collections
+from typing import Optional
 
 
 def _assert_array_is_integer_or_none(array, array_name):

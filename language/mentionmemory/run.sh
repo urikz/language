@@ -22,5 +22,5 @@ virtualenv -p python3 .
 source ./bin/activate
 
 pip install tensorflow
-  pip install -r language/mentionmemory/requirements.txt
+pip install -r language/mentionmemory/requirements.txt
 python -m language.mentionmemory.run_tests

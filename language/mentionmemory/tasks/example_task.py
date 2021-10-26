@@ -22,6 +22,7 @@ from language.mentionmemory.tasks import task_registry
 from language.mentionmemory.utils.custom_types import Array, Dtype, MetricGroups  # pylint: disable=g-multiple-import
 import ml_collections
 import tensorflow.compat.v2 as tf
+from typing import Sequence
 
 
 class ExampleModel(nn.Module):

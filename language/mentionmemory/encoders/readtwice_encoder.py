@@ -29,6 +29,7 @@ from language.mentionmemory.utils import jax_utils as jut
 from language.mentionmemory.utils import mention_utils
 from language.mentionmemory.utils.custom_types import Array, Dtype, InitType  # pylint: disable=g-multiple-import
 import ml_collections
+from typing import Optional
 
 
 @encoder_registry.register_encoder('read_twice')

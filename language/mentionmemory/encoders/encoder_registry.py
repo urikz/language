@@ -17,6 +17,7 @@
 
 
 from language.mentionmemory.encoders import base_encoder
+from typing import TypeVar
 
 _ENCODER_REGISTRY = {}
 

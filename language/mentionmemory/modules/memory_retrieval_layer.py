@@ -19,11 +19,11 @@
 import flax.linen as nn
 import jax
 import jax.numpy as jnp
-
 from language.mentionmemory.modules import topk_similarity_layer
 from language.mentionmemory.utils import default_values
 from language.mentionmemory.utils import jax_utils as jut
 from language.mentionmemory.utils.custom_types import Array
+from typing import Optional
 
 
 def _assert_array_is_integer_or_none(array, array_name):

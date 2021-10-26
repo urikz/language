@@ -17,6 +17,7 @@
 
 
 from language.mentionmemory.tasks import base_task
+from typing import TypeVar
 
 _TASK_REGISTRY = {}
 

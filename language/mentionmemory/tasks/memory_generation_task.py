@@ -28,6 +28,7 @@ import language.mentionmemory.utils.mention_preprocess_utils as mention_preproce
 import ml_collections
 import numpy as np
 import tensorflow.compat.v2 as tf
+from typing import Optional
 
 _SMALL = 1e-10
 

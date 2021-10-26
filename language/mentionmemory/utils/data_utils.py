@@ -27,6 +27,11 @@ import numpy as np
 import tensorflow.compat.v2 as tf
 
 
+def glob(pattern):
+  """Return files from tf.io.gfile.glob in a sorted order."""
+  return sorted(tf.io.gfile.glob(pattern))
+
+
 def pad_fn(features, bsz):
   """Pads a batch up to specified batch size and adds sample weights."""
   new_features = {}
@@ -110,9 +115,9 @@ def _get_input_output_names(
       all features and their types returned by the function.
   """
   if isinstance(patterns, list):
-    input_files = tf.io.gfile.glob(patterns[0])
+    input_files = glob(patterns[0])
   else:
-    input_files = tf.io.gfile.glob(patterns)
+    input_files = glob(patterns)
   first_record = next(iter(tf.data.TFRecordDataset(input_files[0])))
   first_example = decode_fn(first_record)
   input_names = list(first_example.keys())
@@ -350,7 +355,7 @@ def load_sharded_array(
   Returns:
     Loaded and concatenated array.
   """
-  paths = tf.io.gfile.glob(pattern)
+  paths = glob(pattern)
   array_list = []
   for path in paths[offset::stride]:
     logging.info('Loading %s on to process %d', path, jax.process_index())

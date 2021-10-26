@@ -32,6 +32,7 @@ from language.mentionmemory.utils import jax_utils as jut
 from language.mentionmemory.utils.custom_types import Array, Dtype, InitType  # pylint: disable=g-multiple-import
 import ml_collections
 import numpy as np
+from typing import Optional
 
 
 class MemoryRetrievalResultProcessor:

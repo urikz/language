@@ -17,11 +17,11 @@
 
 
 import flax.linen as nn
-
 from language.mentionmemory.modules import attention
 from language.mentionmemory.modules import mlp
 from language.mentionmemory.utils import default_values
 from language.mentionmemory.utils.custom_types import Array, Dtype, InitType  # pylint: disable=g-multiple-import
+from typing import Callable
 
 
 class TransformerLayer(nn.Module):
