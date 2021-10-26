@@ -22,7 +22,7 @@ import re
 from absl import app
 from absl import flags
 from absl import logging
-import language.bert.tokenization as bert_tokenization
+import bert.tokenization as bert_tokenization
 from language.mentionmemory.utils import tokenization_utils
 import numpy as np
 import spacy
