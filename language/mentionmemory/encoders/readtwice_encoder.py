@@ -14,8 +14,6 @@
 # limitations under the License.
 """Contains readtwice encoder implementation."""
 
-
-
 import flax.linen as nn
 import jax.numpy as jnp
 from language.mentionmemory.encoders import base_encoder
@@ -102,6 +100,7 @@ class ReadTwiceEncoder(base_encoder.BaseEncoder):
   max_length: int
   dropout_rate: float
 
+  disable_second_read: bool = False
   num_intermediate_layers: Optional[int] = None
   no_retrieval: bool = False
   same_passage_retrieval_policy: str = 'allow'
@@ -210,9 +209,7 @@ class ReadTwiceEncoder(base_encoder.BaseEncoder):
         dtype=self.dtype,
     )
 
-  def forward(
-      self, batch,
-      deterministic):
+  def forward(self, batch, deterministic):
     loss_helpers = {}
     logging_helpers = {}
 
@@ -223,8 +220,8 @@ class ReadTwiceEncoder(base_encoder.BaseEncoder):
     })
 
     embedded_input = self.embeddings_layer_norm(embedded_input)
-    embedded_input = self.embeddings_dropout(
-        embedded_input, deterministic=deterministic)
+    embedded_input = self.embeddings_dropout(embedded_input,
+                                             deterministic=deterministic)
 
     loss_helpers['word_embeddings'] = self.embedder.variables['params'][
         'embedders_token_ids']['embedding']
@@ -255,8 +252,8 @@ class ReadTwiceEncoder(base_encoder.BaseEncoder):
 
     # Generate memory table
     if self.extract_unlinked_mentions:
-      local_memory_entity_ids = jnp.zeros(
-          dtype=jnp.int32, shape=batch['mention_mask'].shape[0])
+      local_memory_entity_ids = jnp.zeros(dtype=jnp.int32,
+                                          shape=batch['mention_mask'].shape[0])
       local_memory_entity_ids = local_memory_entity_ids.at[
           batch['mention_target_indices']].set(batch['mention_target_ids'])
       extracted_memory_dict = self.memory_extraction_layer(
@@ -333,6 +330,9 @@ class ReadTwiceEncoder(base_encoder.BaseEncoder):
       logging_helpers.update(
           {prefix + key: value for key, value in mem_logging_helpers.items()})
       return encoding
+
+    if self.disable_second_read:
+      return encoding_first, loss_helpers, logging_helpers
 
     # If second read shares initial encoder, just reuse initial representation
     if self.shared_initial_encoder:

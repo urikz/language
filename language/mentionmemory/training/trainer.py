@@ -17,7 +17,6 @@
 import functools
 import os
 
-
 from absl import logging
 from clu import metric_writers
 from clu import periodic_actions
@@ -33,6 +32,7 @@ from language.mentionmemory.tasks import task_registry
 from language.mentionmemory.utils import checkpoint_utils
 from language.mentionmemory.utils import data_utils
 from language.mentionmemory.utils import metric_utils
+from language.mentionmemory.utils import metric_writers as mm_metric_writers
 from language.mentionmemory.utils import optim_utils
 import ml_collections
 import optax
@@ -179,9 +179,10 @@ def train(config):
   init_rng = jax.random.split(init_rng, local_device_count)
 
   logging.info('Initializing model.')
-  initial_variables = jax.pmap(
-      model.init, 'batch', static_broadcasted_argnums=2)(init_rng, dummy_input,
-                                                         True)
+  initial_variables = jax.pmap(model.init,
+                               'batch',
+                               static_broadcasted_argnums=2)(init_rng,
+                                                             dummy_input, True)
   logging.info('Finished initializing model.')
   initial_variables = initial_variables.unfreeze()
 
@@ -215,13 +216,12 @@ def train(config):
                                               config.weight_decay_exclude)
   else:
     decay_mask = None
-  tx = optax.adamw(
-      learning_rate=learning_rate_fn,
-      weight_decay=config.weight_decay,
-      b1=0.9,
-      b2=0.999,
-      eps=1e-6,
-      mask=decay_mask)
+  tx = optax.adamw(learning_rate=learning_rate_fn,
+                   weight_decay=config.weight_decay,
+                   b1=0.9,
+                   b2=0.999,
+                   eps=1e-6,
+                   mask=decay_mask)
   if config.grad_clip is not None:
     tx = optax.chain(tx, optax.clip_by_global_norm(config.grad_clip))
 
@@ -244,8 +244,8 @@ def train(config):
   # Grab last step.
   start_step = int(train_state.step)
 
-  writer = metric_writers.create_default_writer(
-      config.model_dir, just_logging=jax.process_index() > 0)
+  writer = mm_metric_writers.create_default_writer(config.model_dir,
+                                                   config.get('exp_id'))
   if start_step == 0:
     writer.write_hparams(config.to_dict())
 
@@ -323,12 +323,11 @@ def train(config):
       axis_name='batch',
       donate_argnums=(0,),
   )  # pytype: disable=wrong-arg-types
-  p_eval_step = jax.pmap(
-      functools.partial(
-          eval_step,
-          model_config=model_config,
-      ),
-      axis_name='batch')
+  p_eval_step = jax.pmap(functools.partial(
+      eval_step,
+      model_config=model_config,
+  ),
+                         axis_name='batch')
 
   hooks = []
   report_progress = periodic_actions.ReportProgress(
@@ -392,8 +391,8 @@ def train(config):
                 data_utils.save_samples_to_json(eval_processed, config, step)
 
       # Save a checkpoint on one host after every checkpoint_freq steps.
-      save_checkpoint = (
-          step % config.checkpoint_every_steps == 0 or is_last_step)
+      save_checkpoint = (step % config.checkpoint_every_steps == 0 or
+                         is_last_step)
       if (config.save_checkpoints and save_checkpoint and
           jax.process_index() == 0):
         with report_progress.timed('checkpoint'):
@@ -406,9 +405,9 @@ def train(config):
               keep_every_n_steps=config.get('keep_checkpoint_every_steps'),
           )
 
-      save_model = (
-          config.save_every_steps and
-          (step % config.save_every_steps == 0 or is_last_step) and step != 0)
+      save_model = (config.save_every_steps and
+                    (step % config.save_every_steps == 0 or is_last_step) and
+                    step != 0)
       if (save_model and jax.process_index() == 0):
         with report_progress.timed('checkpoint'):
           logging.info('Saving weights at step %s', step)

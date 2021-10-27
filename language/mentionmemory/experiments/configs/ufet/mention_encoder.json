@@ -1,0 +1,86 @@
+{
+  "task_name": "ultra_fine_entity_typing",
+  "model_config": {
+    "encoder_name": "read_twice",
+    "dtype": "float32",
+    "mention_encodings_feature": "memory_values",
+    "encoder_config": {
+      "dtype": "float32",
+      "vocab_size": 30522,
+      "max_positions": 512,
+      "max_length": 128,
+      "hidden_size": 768,
+      "intermediate_dim": 3072,
+      "memory_key_dim": 128,
+      "memory_value_dim": 512,
+      "memory_update_type": "additive",
+      "memory_update_config": {},
+      "k_top": null,
+      "rows": 32,
+      "num_attention_heads": 12,
+      "num_initial_layers": 4,
+      "num_initial_layers_second": 4,
+      "num_final_layers": 8,
+      "num_final_layers_second": 8,
+      "shared_initial_encoder": true,
+      "shared_final_encoder": true,
+      "extract_unlinked_mentions": false,
+      "no_retrieval_for_masked_mentions": false,
+      "disable_second_read": true,
+      "dropout_rate": 0.1
+    }
+  },
+  "seed": 0,
+  "num_train_steps": 150000,
+  "learning_rate": 1e-5,
+  "warmup": true,
+  "warmup_steps": 10000,
+  "linear_decay": true,
+  "decay_minimum_factor": 0,
+  "weight_decay": 0.01,
+  "weight_decay_exclude": [
+    "layer_norm",
+    "bias"
+  ],
+  "grad_clip": 1.0,
+  "ignore_k_nans": 10,
+  "per_device_batch_size": 13,
+  "max_mentions_per_sample": 32,
+  "max_mentions": 32,
+  "max_num_labels_per_sample": 32,
+  "train_data": [
+    {
+      "patterns": [
+        "/data/urikz/ufet/bin/train_crowd"
+      ],
+      "samples_per_example": 1
+    },
+    {
+      "patterns": [
+        "/data/urikz/ufet/bin/train_el"
+      ],
+      "samples_per_example": 1
+    },
+    {
+      "patterns": [
+        "/data/urikz/ufet/bin/train_headword"
+      ],
+      "samples_per_example": 1
+    }
+  ],
+  "eval_data": [
+    {
+      "patterns": [
+        "/data/urikz/ufet/bin/valid"
+      ],
+      "samples_per_example": 1
+    }
+  ],
+  "pad_eval": true,
+  "save_checkpoints": true,
+  "checkpoint_every_steps": 10000,
+  "save_every_steps": null,
+  "eval_every_steps": 1000,
+  "max_length_with_entity_tokens": 194,
+  "load_weights": "/data/urikz/mentionmemory/models/btome_base"
+}

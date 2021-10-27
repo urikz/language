@@ -6,6 +6,11 @@ This repository contains the code for the MentionMemory project.
 
 ```
 git clone https://github.com/google-research/language
+```
+
+Install Tensorflow, [JAX](https://github.com/google/jax#installation), and the rest of requirements
+
+```
 pip install -r language/mentionmemory/requirements.txt
 ```
 
