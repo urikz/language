@@ -152,7 +152,12 @@ class UFETSampleProcessor(object):
     if len(sample['mention_span']) == 0:
       return None, 0
 
+    if len(mention_char_spans) >= self.max_mentions:
+      mention_char_spans = mention_char_spans[:self.max_mentions - 1]
+
     mention_target_index = len(mention_char_spans)
+    assert mention_target_index < self.max_mentions
+
     mention_char_spans.append(
         (len(left_context),
          len(left_context) + len(sample['mention_span']) - 1))
