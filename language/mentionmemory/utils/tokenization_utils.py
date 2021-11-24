@@ -14,8 +14,6 @@
 # limitations under the License.
 """Tokenizer utils."""
 
-
-
 from absl import logging
 from typing_extensions import Protocol
 
@@ -44,9 +42,7 @@ class Tokenizer(TokenConverter, Protocol):
     pass
 
 
-def convert_tokens_to_ids_and_pad(
-    word_pieces, max_length,
-    token_converter):
+def convert_tokens_to_ids_and_pad(word_pieces, max_length, token_converter):
   """Converts the input tokens to padded ids and mask.
 
   Args:
@@ -74,14 +70,13 @@ def convert_tokens_to_ids_and_pad(
   return word_piece_ids, word_piece_mask
 
 
-def tokenize_with_mention_spans(
-    tokenizer,
-    sentence,
-    spans,
-    max_length,
-    add_bert_tokens = True,
-    allow_truncated_spans = False
-):
+def tokenize_with_mention_spans(tokenizer,
+                                sentence,
+                                spans,
+                                max_length,
+                                add_bert_tokens=True,
+                                allow_truncated_spans=False,
+                                encode_utf8=True):
   """Tokenizes and resolves byte-offsets to word-offsets.
 
   Given a sentence and a set of inclusive byte-offset spans, applies a BERT
@@ -110,7 +105,8 @@ def tokenize_with_mention_spans(
     RuntimeError: if allow_truncated_spans is False but spans are dropped due
       to length.
   """
-  sentence = sentence.encode("utf-8")
+  if encode_utf8:
+    sentence = sentence.encode("utf-8")
 
   last_index = 0
   last_start = 0

@@ -76,8 +76,8 @@ class UFETSampleProcessor(object):
 
   def initializer(self):
     global tokenizer
-    tokenizer = bert_tokenization.FullTokenizer(self.vocab_path,
-                                                do_lower_case=True)
+    tokenizer = bert_tokenization.FullTokenizer(
+        self.vocab_path, do_lower_case=True)
     global label_vocab
     with open(self.label_vocab_path) as f:
       label_vocab = {line.strip(): index for index, line in enumerate(f)}
@@ -87,6 +87,7 @@ class UFETSampleProcessor(object):
   def _get_mention_char_spans(self, text, shift):
     parsed_text = spacy_model(text)
     mention_char_spans = []
+    return mention_char_spans
     for chunk in parsed_text.noun_chunks:
       span_start_char = parsed_text[chunk.start].idx
       span_last_token = parsed_text[chunk.end - 1]
@@ -107,12 +108,10 @@ class UFETSampleProcessor(object):
 
     mention_mask = np.ones(len(mention_start_positions), dtype=np.int64)
     mention_mask = np.pad(mention_mask, mention_pad_shape, mode='constant')
-    mention_start_positions = np.pad(mention_start_positions,
-                                     mention_pad_shape,
-                                     mode='constant')
-    mention_end_positions = np.pad(mention_end_positions,
-                                   mention_pad_shape,
-                                   mode='constant')
+    mention_start_positions = np.pad(
+        mention_start_positions, mention_pad_shape, mode='constant')
+    mention_end_positions = np.pad(
+        mention_end_positions, mention_pad_shape, mode='constant')
 
     return {
         'mention_start_positions': mention_start_positions,
@@ -126,8 +125,8 @@ class UFETSampleProcessor(object):
     sample['target'] = np.zeros(self.max_num_labels_per_sample, dtype=np.int64)
     sample['target'][:len(target)] = target
 
-    sample['target_mask'] = np.zeros(self.max_num_labels_per_sample,
-                                     dtype=np.int64)
+    sample['target_mask'] = np.zeros(
+        self.max_num_labels_per_sample, dtype=np.int64)
     sample['target_mask'][:len(target)] = 1
     return sample
 
@@ -181,7 +180,8 @@ class UFETSampleProcessor(object):
         spans=mention_char_spans,
         max_length=self.max_length,
         add_bert_tokens=True,
-        allow_truncated_spans=True)
+        allow_truncated_spans=True,
+        encode_utf8=True)
 
     if mention_target_index not in span_indexes:
       return None, 0
@@ -209,8 +209,8 @@ def map_maybe_in_parallel(processor, inputs, nworkers: int):
     for result in map(processor, inputs):
       yield result
   else:
-    with multiprocessing.Pool(processes=nworkers,
-                              initializer=processor.initializer) as pool:
+    with multiprocessing.Pool(
+        processes=nworkers, initializer=processor.initializer) as pool:
       for result in pool.imap(processor, inputs):
         yield result
 

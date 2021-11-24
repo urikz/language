@@ -14,7 +14,6 @@
 # limitations under the License.
 """Contains base implementation for all mention-level classification tasks."""
 
-
 import flax.linen as nn
 import jax.numpy as jnp
 from language.mentionmemory.encoders import encoder_registry
@@ -45,16 +44,26 @@ class MentionClassifierModel(nn.Module):
   encoder_config: ml_collections.FrozenConfigDict
   dtype: Dtype
   mention_encodings_feature: str = 'target_mention_encodings'
+  apply_mlp: bool = False
 
   def setup(self):
     self.encoder = encoder_registry.get_registered_encoder(
         self.encoder_name)(**self.encoder_config)
+    if self.apply_mlp:
+      self.mlp = nn.Dense(self.encoder_config.hidden_size, self.dtype)
+      self.dropout = nn.Dropout(self.encoder_config.dropout_rate)
     self.linear_classifier = nn.Dense(self.num_classes, dtype=self.dtype)
 
   def __call__(self, batch, deterministic):
     _, loss_helpers, logging_helpers = self.encoder.forward(
         batch, deterministic)
     mention_encodings = loss_helpers[self.mention_encodings_feature]
+
+    if self.apply_mlp:
+      mention_encodings = self.mlp(mention_encodings)
+      mention_encodings = nn.tanh(mention_encodings)
+      mention_encodings = self.dropout(
+          mention_encodings, deterministic=deterministic)
 
     classifier_logits = self.linear_classifier(mention_encodings)
     loss_helpers['classifier_logits'] = classifier_logits
@@ -67,9 +76,7 @@ class MentionClassifierTask(downstream_encoder_task.DownstreamEncoderTask):
   model_class = MentionClassifierModel
 
   @staticmethod
-  def make_collater_fn(
-      config
-  ):
+  def make_collater_fn(config):
     """Produces function to preprocess batches for mention classification task.
 
     This function samples and flattens mentions from input data.
@@ -151,6 +158,9 @@ class MentionClassifierTask(downstream_encoder_task.DownstreamEncoderTask):
       new_batch['classifier_target_mask'] = tf.reshape(
           batch['target_mask'], [bsz, config.max_num_labels_per_sample])
 
+      if 'sample_weights' in batch:
+        new_batch['sample_weights'] = batch['sample_weights']
+
       new_batch['mention_mask'] = mention_mask
       new_batch['mention_start_positions'] = mention_start_positions
       new_batch['mention_end_positions'] = mention_end_positions
@@ -198,8 +208,7 @@ class MentionClassifierTask(downstream_encoder_task.DownstreamEncoderTask):
     return collater_fn
 
   @staticmethod
-  def get_name_to_features(
-      config):
+  def get_name_to_features(config):
     """Return feature dict for decoding purposes. See BaseTask for details."""
     encoder_config = config.model_config.encoder_config
     max_length = encoder_config.max_length

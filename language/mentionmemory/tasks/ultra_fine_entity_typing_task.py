@@ -14,8 +14,6 @@
 # limitations under the License.
 """Ultra Fine Entity Typing mention classification task."""
 
-
-
 import flax.linen as nn
 import jax
 import jax.numpy as jnp
@@ -35,16 +33,15 @@ ULTRA_FINE_CLASSES_END = NUM_CLASSES
 _SMALL_NUMBER = 1e-10
 
 
-def get_weight_per_group(labels, group_start,
-                         group_end):
+def get_weight_per_group(labels, group_start, group_end):
   """Computes which samples have at least one labels within a group."""
   label_per_group_exists = labels[:, group_start:group_end].sum(1) > 0
   label_per_group_exists = label_per_group_exists.astype(jnp.float32)
   return label_per_group_exists
 
 
-def get_loss_per_group(loss_per_label, weight_per_group,
-                       group_start, group_end):
+def get_loss_per_group(loss_per_label, weight_per_group, group_start,
+                       group_end):
   """Computes loss per sample within a group of labels."""
   loss_per_group = loss_per_label[:, group_start:group_end].sum(1)
   loss_per_group *= weight_per_group
@@ -68,9 +65,11 @@ def get_predictions(logit_per_label):
   return final_predictions
 
 
-def get_mrr(labels, logits):
+def get_mrr(labels, logits, sample_weights):
   """Mean reciprocal rank in https://www.aclweb.org/anthology/P18-1009.pdf."""
   labels_exists = labels.sum(axis=-1) > 0
+  labels_exists = labels_exists.astype(sample_weights.dtype)
+  labels_exists = labels_exists * sample_weights
   labels_exists = labels_exists.astype(jnp.float32)
   order = jnp.argsort(-logits, axis=-1)
   ranks = jnp.argsort(order, axis=-1)
@@ -83,8 +82,8 @@ def get_mrr(labels, logits):
   }
 
 
-def get_positives_negatives(metric_name, labels, predictions,
-                            group_start, group_end):
+def get_positives_negatives(metric_name, labels, predictions, group_start,
+                            group_end, sample_weights):
   """Computes metrics over precision and recall for a specific groups."""
   tp = jnp.logical_and(labels[:, group_start:group_end] == 1,
                        predictions[:, group_start:group_end] == 1).sum(-1)
@@ -92,10 +91,18 @@ def get_positives_negatives(metric_name, labels, predictions,
                        predictions[:, group_start:group_end] == 1).sum(-1)
   fn = jnp.logical_and(labels[:, group_start:group_end] == 1,
                        predictions[:, group_start:group_end] == 0).sum(-1)
+
+  # Ignore sample if label does not exist.
+  tp *= sample_weights
+  fp *= sample_weights
+  fn *= sample_weights
+
   precision = tp / (tp + fp + _SMALL_NUMBER)
-  precision_weight = (tp + fp) > 0
+  precision_weight = ((tp + fp) > 0).astype(sample_weights.dtype)
+  precision_weight = precision_weight * sample_weights
   recall = tp / (tp + fn + _SMALL_NUMBER)
-  recall_weight = (tp + fn) > 0
+  recall_weight = ((tp + fn) > 0).astype(sample_weights.dtype)
+  recall_weight = recall_weight * sample_weights
   return {
       metric_name + '_precision': {
           'value': jnp.dot(precision, precision_weight),
@@ -108,28 +115,31 @@ def get_positives_negatives(metric_name, labels, predictions,
   }
 
 
-def get_prediction_recall_metrics(labels,
-                                  predictions):
+def get_prediction_recall_metrics(labels, predictions, sample_weights):
   """Computes metrics over precision and recall over different groups."""
   metrics = {}
   metrics.update(
-      get_positives_negatives('total', labels, predictions, 0, NUM_CLASSES))
+      get_positives_negatives('total', labels, predictions, 0, NUM_CLASSES,
+                              sample_weights))
   metrics.update(
       get_positives_negatives('coarse_grained', labels, predictions,
-                              COARSE_CLASSES_START, COARSE_CLASSES_END))
+                              COARSE_CLASSES_START, COARSE_CLASSES_END,
+                              sample_weights))
   metrics.update(
       get_positives_negatives('fine_grained', labels, predictions,
-                              FINE_CLASSES_START, FINE_CLASSES_END))
+                              FINE_CLASSES_START, FINE_CLASSES_END,
+                              sample_weights))
   metrics.update(
       get_positives_negatives('ultra_fine_grained', labels, predictions,
-                              ULTRA_FINE_CLASSES_START, ULTRA_FINE_CLASSES_END))
+                              ULTRA_FINE_CLASSES_START, ULTRA_FINE_CLASSES_END,
+                              sample_weights))
   return metrics
 
 
-def get_eval_metrics(labels, logits):
+def get_eval_metrics(labels, logits, sample_weights):
   predictions = get_predictions(logits)
-  metrics = get_prediction_recall_metrics(labels, predictions)
-  metrics['agg_mrr'] = get_mrr(labels, logits)
+  metrics = get_prediction_recall_metrics(labels, predictions, sample_weights)
+  metrics['agg_mrr'] = get_mrr(labels, logits, sample_weights)
   return metrics
 
 
@@ -142,15 +152,12 @@ class UltraFineEntityTypingTask(mention_classifier_task.MentionClassifierTask):
   """
 
   @classmethod
-  def build_model(cls,
-                  model_config):
+  def build_model(cls, model_config):
     """Builds model by instantiating flax module associated with task."""
     return cls.model_class(num_classes=NUM_CLASSES, **model_config)
 
   @classmethod
-  def make_loss_fn(
-      cls, config
-  ):
+  def make_loss_fn(cls, config):
     """Creates loss function for Ultra Fine Entity Typing training.
 
     TODO(urikz): Write detailed description.
@@ -170,12 +177,15 @@ class UltraFineEntityTypingTask(mention_classifier_task.MentionClassifierTask):
         model_vars,
         batch,
         deterministic,
-        dropout_rng = None,
+        dropout_rng=None,
     ):
       """Loss function used by Ultra Fine Entity Typing task. See BaseTask."""
+      params = {k: v for (k, v) in model_params.items()}
+      params.update({k: v for (k, v) in model_vars.get('params', {}).items()})
+      variable_dict = {'params': params}
+      variable_dict.update(
+          {k: v for (k, v) in model_vars.items() if k != 'params'})
 
-      variable_dict = {'params': model_params}
-      variable_dict.update(model_vars)
       loss_helpers, _ = cls.build_model(model_config).apply(
           variable_dict, batch, deterministic=deterministic, rngs=dropout_rng)
 
@@ -194,6 +204,14 @@ class UltraFineEntityTypingTask(mention_classifier_task.MentionClassifierTask):
       classifier_labels *= jnp.expand_dims(batch['classifier_target_mask'], -1)
       # Labels in a dense format with a shape [batch_size, NUM_CLASSES]
       classifier_labels = classifier_labels.sum(axis=1)
+
+      if 'sample_weights' in batch:
+        classifier_labels *= jnp.expand_dims(batch['sample_weights'], -1)
+        sample_weights = batch['sample_weights']
+      else:
+        batch_size = batch['classifier_target'].shape[0]
+        sample_weights = jnp.ones((batch_size,), dtype=classifier_labels.dtype)
+
       loss_per_label = -log_prob * classifier_labels - log_comp_prob * (
           1.0 - classifier_labels)
 
@@ -225,7 +243,7 @@ class UltraFineEntityTypingTask(mention_classifier_task.MentionClassifierTask):
       metrics = {
           'agg': {
               'loss': loss,
-              'denominator': loss_per_sample.shape[0],
+              'denominator': sample_weights.sum(),
           },
           'coarse_grained': {
               'loss': coarse_grained_loss.sum(),
@@ -240,7 +258,9 @@ class UltraFineEntityTypingTask(mention_classifier_task.MentionClassifierTask):
               'denominator': ultra_fine_grained_weight.sum(),
           },
       }
-      metrics.update(get_eval_metrics(classifier_labels, classifier_logits))
+      metrics.update(
+          get_eval_metrics(classifier_labels, classifier_logits,
+                           sample_weights))
       return loss, metrics, {}
 
     return loss_fn

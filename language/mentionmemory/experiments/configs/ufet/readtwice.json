@@ -4,6 +4,7 @@
     "encoder_name": "read_twice",
     "dtype": "float32",
     "mention_encodings_feature": "memory_values",
+    "apply_mlp": false,
     "encoder_config": {
       "dtype": "float32",
       "vocab_size": 30522,
@@ -45,25 +46,25 @@
   "grad_clip": 1.0,
   "ignore_k_nans": 10,
   "per_device_batch_size": 13,
-  "max_mentions_per_sample": 32,
-  "max_mentions": 32,
+  "max_mentions_per_sample": 1,
+  "max_mentions": 1,
   "max_num_labels_per_sample": 32,
   "train_data": [
     {
       "patterns": [
-        "/data/urikz/ufet/bin/train_crowd"
+        "/data/urikz/ufet/bin_single_mention/train_crowd"
       ],
       "samples_per_example": 1
     },
     {
       "patterns": [
-        "/data/urikz/ufet/bin/train_el"
+        "/data/urikz/ufet/bin_single_mention/train_el"
       ],
       "samples_per_example": 1
     },
     {
       "patterns": [
-        "/data/urikz/ufet/bin/train_headword"
+        "/data/urikz/ufet/bin_single_mention/train_headword"
       ],
       "samples_per_example": 1
     }
@@ -71,7 +72,7 @@
   "eval_data": [
     {
       "patterns": [
-        "/data/urikz/ufet/bin/valid"
+        "/data/urikz/ufet/bin_single_mention/valid"
       ],
       "samples_per_example": 1
     }
@@ -81,6 +82,6 @@
   "checkpoint_every_steps": 10000,
   "save_every_steps": null,
   "eval_every_steps": 1000,
-  "max_length_with_entity_tokens": 194,
+  "max_length_with_entity_tokens": 192,
   "load_weights": "/data/urikz/mentionmemory/models/btome_base"
 }
