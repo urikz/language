@@ -20,5 +20,6 @@ from language.mentionmemory.encoders import eae_encoder
 from language.mentionmemory.encoders import mauto_encoder
 from language.mentionmemory.encoders import mention_memory_encoder
 from language.mentionmemory.encoders import readtwice_encoder
+from language.mentionmemory.encoders import t5_seq2seq_model
 
 # pylint: enable=unused-import
