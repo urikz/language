@@ -25,5 +25,6 @@ from language.mentionmemory.tasks import mention_based_entity_qa_task
 from language.mentionmemory.tasks import mention_memory_task
 from language.mentionmemory.tasks import readtwice_task
 from language.mentionmemory.tasks import relation_classifier_task
+from language.mentionmemory.tasks import seq2seq_task
 from language.mentionmemory.tasks import text_classifier
 from language.mentionmemory.tasks import ultra_fine_entity_typing_task

@@ -31,7 +31,6 @@ from flaxformer.architectures.t5 import t5_architecture
 from flaxformer.architectures.t5 import t5_common_layers
 from flaxformer.components import dense
 
-
 ACTIVATIONS = ('gelu', 'linear')
 HEAD_DIM = 64
 
@@ -52,7 +51,8 @@ class T5Seq2SeqModel(base_encoder.BaseEncoder):
     num_decoder_layers: number of Transformer layers in the encoder.
     dtype: data type of encoding (bfloat16 or float32). Parameters and certain
       parts of computation (i.e. loss) are always in float32.
-    max_length: maximal number of tokens for pre-training.
+    source_max_length: maximal number of source tokens for pre-training.
+    target_max_length: maximal number of target tokens for pre-training.
     dropout_rate: dropout rate in Transformer layers.
     head_dim: The dimension of the attention head. Default 64.
     activations: The activations to use for the MLP. Default ('gelu', 'linear').
@@ -68,7 +68,8 @@ class T5Seq2SeqModel(base_encoder.BaseEncoder):
   num_decoder_layers: int
   dtype: Dtype
   # TODO(urikz): Move this argument out of model parameters
-  max_length: int
+  source_max_length: int
+  target_max_length: int
   dropout_rate: float
 
   head_dim: int = 64
@@ -149,7 +150,7 @@ class T5Seq2SeqModel(base_encoder.BaseEncoder):
         batch['target_output_text_ids'],
         encoder_segment_ids=None,
         decoder_segment_ids=None,
-        decoder_positions=batch['target_position_ids'],
+        decoder_positions=batch['target_input_position_ids'],
         enable_dropout=enable_dropout,
         decode=decode,
         max_decode_length=max_decode_length)

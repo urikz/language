@@ -14,8 +14,6 @@
 # limitations under the License.
 """Defines abstract task class used as base for other tasks in package."""
 
-
-
 import flax.linen as nn
 import jax.numpy as jnp
 from language.mentionmemory.utils.custom_types import Array, MetricGroups  # pylint: disable=g-multiple-import
@@ -34,8 +32,7 @@ class BaseTask():
   model_class = nn.Module
 
   @classmethod
-  def build_model(cls,
-                  model_config):
+  def build_model(cls, model_config):
     """Builds model by instantiating flax module associated with task."""
     return cls.model_class(**model_config)
 
@@ -59,7 +56,7 @@ class BaseTask():
         model_vars,
         batch,
         deterministic,
-        dropout_rng = None,
+        dropout_rng=None,
     ):
       """Model-specific loss function.
 
@@ -82,9 +79,8 @@ class BaseTask():
     return loss_fn
 
   @staticmethod
-  def get_name_to_features(
-      config  # pylint: disable=unused-argument
-  ):
+  def get_name_to_features(config  # pylint: disable=unused-argument
+                          ):
     """Return feature dict for decoding purposes.
 
     Models are responsible for preprocessing and therefore should
@@ -99,9 +95,8 @@ class BaseTask():
     raise NotImplementedError
 
   @staticmethod
-  def make_preprocess_fn(
-      config  # pylint: disable=unused-argument
-  ):
+  def make_preprocess_fn(config  # pylint: disable=unused-argument
+                        ):
     """Produces function to preprocess samples.
 
     Tasks should be aware of what type of input they require and are
@@ -124,9 +119,7 @@ class BaseTask():
     return preprocess_fn
 
   @staticmethod
-  def make_collater_fn(
-      config  # pylint: disable=unused-argument
-  ):
+  def make_collater_fn(config):  # pylint: disable=unused-argument
     """Produces function to preprocess batches.
 
     The difference compared to `preprocess_fn` is that `collater_fn_` does not
@@ -144,7 +137,7 @@ class BaseTask():
     """
 
     def collater_fn(batch):
-      raise NotImplementedError
+      return batch
 
     return collater_fn
 
@@ -200,8 +193,7 @@ class BaseTask():
       Function that postprocesses model's input and output for serialization.
     """
 
-    def postprocess_fn(batch,
-                       auxiliary_output):
+    def postprocess_fn(batch, auxiliary_output):
       """Function that prepares model's input and output for serialization."""
 
       features = {}

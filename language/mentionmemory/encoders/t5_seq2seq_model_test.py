@@ -28,7 +28,7 @@ import ml_collections
 import numpy as np
 
 
-class EaEEncoderTest(parameterized.TestCase):
+class T5Seq2SeqModelTest(parameterized.TestCase):
   """Tests for T5 seq2seq model."""
 
   encoder_name = 't5'
@@ -36,7 +36,8 @@ class EaEEncoderTest(parameterized.TestCase):
   encoder_config = {
       'dtype': 'float32',
       'vocab_size': 1000,
-      'max_length': 128,
+      'source_max_length': 32,
+      'target_max_length': 32,
       'hidden_size': 3,
       'head_dim': 1,
       'intermediate_dim': 7,
@@ -63,7 +64,7 @@ class EaEEncoderTest(parameterized.TestCase):
                 batch_size,
                 text_length,
             )),
-        'target_position_ids':
+        'target_input_position_ids':
             positions,
     }
     batch = jax.tree_map(jnp.asarray, batch)
@@ -72,8 +73,8 @@ class EaEEncoderTest(parameterized.TestCase):
   @parameterized.parameters((2, 13), (1, 20), (17, 5))
   def test_model_shape(
       self,
-      batch_size=2,
-      text_length=13,
+      batch_size,
+      text_length,
   ):
     """Test model forward runs and produces expected shape."""
     vocab_size = self.encoder_config['vocab_size']
