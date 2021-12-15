@@ -95,6 +95,7 @@ def evaluate(
   eval_metrics = []
   eval_auxiliary = []
   for batch in eval_data:
+    sample_id = batch.pop('sample_id', None)
     batch = jax.tree_map(jnp.asarray, batch)
     metrics, auxiliary_output = eval_step_fn(
         train_state,
@@ -102,7 +103,10 @@ def evaluate(
         batch,
     )
     eval_metrics.append(metrics)
-    batch_auxiliary = (jax.device_get(batch), jax.device_get(auxiliary_output))
+    cpu_batch = jax.device_get(batch)
+    if sample_id is not None:
+      cpu_batch['sample_id'] = sample_id
+    batch_auxiliary = (cpu_batch, jax.device_get(auxiliary_output))
     eval_auxiliary.append(batch_auxiliary)
   eval_metrics = common_utils.get_metrics(eval_metrics)
   eval_metrics_sums = jax.tree_map(jnp.sum, eval_metrics)
@@ -179,10 +183,9 @@ def train(config):
   init_rng = jax.random.split(init_rng, local_device_count)
 
   logging.info('Initializing model.')
-  initial_variables = jax.pmap(model.init,
-                               'batch',
-                               static_broadcasted_argnums=2)(init_rng,
-                                                             dummy_input, True)
+  initial_variables = jax.pmap(
+      model.init, 'batch', static_broadcasted_argnums=2)(init_rng, dummy_input,
+                                                         True)
   logging.info('Finished initializing model.')
   initial_variables = initial_variables.unfreeze()
 
@@ -216,12 +219,13 @@ def train(config):
                                               config.weight_decay_exclude)
   else:
     decay_mask = None
-  tx = optax.adamw(learning_rate=learning_rate_fn,
-                   weight_decay=config.weight_decay,
-                   b1=0.9,
-                   b2=0.999,
-                   eps=1e-6,
-                   mask=decay_mask)
+  tx = optax.adamw(
+      learning_rate=learning_rate_fn,
+      weight_decay=config.weight_decay,
+      b1=0.9,
+      b2=0.999,
+      eps=1e-6,
+      mask=decay_mask)
   if config.grad_clip is not None:
     tx = optax.chain(tx, optax.clip_by_global_norm(config.grad_clip))
 
@@ -323,11 +327,12 @@ def train(config):
       axis_name='batch',
       donate_argnums=(0,),
   )  # pytype: disable=wrong-arg-types
-  p_eval_step = jax.pmap(functools.partial(
-      eval_step,
-      model_config=model_config,
-  ),
-                         axis_name='batch')
+  p_eval_step = jax.pmap(
+      functools.partial(
+          eval_step,
+          model_config=model_config,
+      ),
+      axis_name='batch')
 
   hooks = []
   report_progress = periodic_actions.ReportProgress(
@@ -345,7 +350,9 @@ def train(config):
 
       # Shard data to devices and perform a training step.
       with jax.profiler.StepTraceAnnotation('train', step_num=step):
-        batch = jax.tree_map(jnp.asarray, train_iter.get_next())
+        batch = train_iter.get_next()
+        batch.pop('sample_id', None)
+        batch = jax.tree_map(jnp.asarray, batch)
         train_state, metrics = p_train_step(
             train_state,
             model_vars,
@@ -391,8 +398,8 @@ def train(config):
                 data_utils.save_samples_to_json(eval_processed, config, step)
 
       # Save a checkpoint on one host after every checkpoint_freq steps.
-      save_checkpoint = (step % config.checkpoint_every_steps == 0 or
-                         is_last_step)
+      save_checkpoint = (
+          step % config.checkpoint_every_steps == 0 or is_last_step)
       if (config.save_checkpoints and save_checkpoint and
           jax.process_index() == 0):
         with report_progress.timed('checkpoint'):
@@ -405,9 +412,9 @@ def train(config):
               keep_every_n_steps=config.get('keep_checkpoint_every_steps'),
           )
 
-      save_model = (config.save_every_steps and
-                    (step % config.save_every_steps == 0 or is_last_step) and
-                    step != 0)
+      save_model = (
+          config.save_every_steps and
+          (step % config.save_every_steps == 0 or is_last_step) and step != 0)
       if (save_model and jax.process_index() == 0):
         with report_progress.timed('checkpoint'):
           logging.info('Saving weights at step %s', step)

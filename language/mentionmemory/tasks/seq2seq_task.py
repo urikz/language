@@ -136,6 +136,8 @@ class Seq2SeqTask(base_task.BaseTask):
           'target_input_position_ids':
               np.arange(encoder_config.target_max_length - 1),
       }
+      if 'sample_id' in example:
+        new_example['sample_id'] = example['sample_id']
 
       return new_example
 
@@ -153,6 +155,7 @@ class Seq2SeqTask(base_task.BaseTask):
         'source_text_mask': tf.io.FixedLenFeature(source_max_length, tf.int64),
         'target_text_ids': tf.io.FixedLenFeature(target_max_length, tf.int64),
         'target_text_mask': tf.io.FixedLenFeature(target_max_length, tf.int64),
+        'sample_id': tf.io.FixedLenFeature(1, tf.string),
     }
 
     return name_to_features
@@ -178,3 +181,21 @@ class Seq2SeqTask(base_task.BaseTask):
     }
 
     return dummy_input
+
+  @classmethod
+  def load_weights(cls, config):
+    """Load model weights from file.
+
+    We assume that `encoder_name` is specified in the config.
+    We use corresponding class to load encoder weights.
+
+    Args:
+      config: experiment config.
+
+    Returns:
+      Dictionary of model weights.
+    """
+    encoder_name = config.model_config.encoder_name
+    encoder_class = encoder_registry.get_registered_encoder(encoder_name)
+    encoder_variables = encoder_class.load_weights(config)
+    return encoder_variables

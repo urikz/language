@@ -1,0 +1,56 @@
+{
+  "task_name": "seq2seq",
+  "model_config": {
+    "encoder_name": "t5",
+    "encoder_config": {
+      "dtype": "float32",
+      "vocab_size": 32128,
+      "source_max_length": 128,
+      "target_max_length": 128,
+      "hidden_size": 768,
+      "head_dim": 64,
+      "intermediate_dim": 2048,
+      "num_attention_heads": 12,
+      "num_encoder_layers": 12,
+      "num_decoder_layers": 12,
+      "dropout_rate": 0.1
+    }
+  },
+  "seed": 0,
+  "num_train_steps": 64000,
+  "learning_rate": 1e-5,
+  "warmup": true,
+  "warmup_steps": 3840,
+  "linear_decay": true,
+  "decay_minimum_factor": 0,
+  "weight_decay": 0.01,
+  "weight_decay_exclude": [
+    "layer_norm",
+    "bias"
+  ],
+  "grad_clip": 1.0,
+  "ignore_k_nans": 10,
+  "per_device_batch_size": 13,
+  "train_data": [
+    {
+      "patterns": [
+        "/data/urikz/mentionmemory/data/mtop/processed/train"
+      ],
+      "samples_per_example": 1
+    }
+  ],
+  "eval_data": [
+    {
+      "patterns": [
+        "/data/urikz/mentionmemory/data/mtop/processed/valid"
+      ],
+      "samples_per_example": 1
+    }
+  ],
+  "pad_eval": true,
+  "save_checkpoints": true,
+  "checkpoint_every_steps": 10000,
+  "save_every_steps": null,
+  "eval_every_steps": 1000,
+  "load_weights": "/data/urikz/mentionmemory/models/t5_1_1_base"
+}

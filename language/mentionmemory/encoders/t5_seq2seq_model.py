@@ -14,8 +14,10 @@
 # limitations under the License.
 """Contains T5 sequence-to-sequence model."""
 
+from absl import logging
 import flax.linen as nn
 import functools
+import jax
 import jax.numpy as jnp
 from typing import List
 
@@ -27,9 +29,12 @@ from language.mentionmemory.utils import default_values
 from language.mentionmemory.utils import jax_utils as jut
 from language.mentionmemory.utils.custom_types import Array, Dtype, InitType  # pylint: disable=g-multiple-import
 
+from flax import serialization
 from flaxformer.architectures.t5 import t5_architecture
 from flaxformer.architectures.t5 import t5_common_layers
 from flaxformer.components import dense
+
+from tensorflow.io import gfile
 
 ACTIVATIONS = ('gelu', 'linear')
 HEAD_DIM = 64
@@ -156,3 +161,18 @@ class T5Seq2SeqModel(base_encoder.BaseEncoder):
         max_decode_length=max_decode_length)
 
     return target_logits, loss_helpers, logging_helpers
+
+  @staticmethod
+  def load_weights(config):
+    """Load model weights from file."""
+    weight_path = config.load_weights
+    if not gfile.exists(weight_path):
+      raise ValueError('Matching checkpoint not found: {}'.format(weight_path))
+    else:
+      logging.info('Loading weights from %s', weight_path)
+      with gfile.GFile(weight_path, 'rb') as fp:
+        params = serialization.from_bytes(None, fp.read())
+
+    params = jax.tree_map(jnp.asarray, params)
+    params = jax.device_put_replicated(params, jax.local_devices())
+    return {'params': params}

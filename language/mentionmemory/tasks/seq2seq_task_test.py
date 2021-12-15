@@ -28,29 +28,6 @@ from language.mentionmemory.utils import test_utils
 import ml_collections
 import numpy as np
 
-# def gen_eae_test_list():
-
-#   text_lengths = [0, 50, 128]
-#   n_mention_list = [0, 5, 10, 15]
-#   n_linked_mention_list = [0, 3, 5, 8, 10, 12, 15]
-#   no_entity_attention = [True, False]
-
-#   # pylint: disable=g-complex-comprehension
-#   test_list = [
-#       (text_length, n_mentions, n_linked_mentions, no_entity_attention)
-#       for (
-#           text_length,
-#           n_mentions,
-#           n_linked_mentions,
-#           no_entity_attention,
-#       ) in itertools.product(text_lengths, n_mention_list,
-#                              n_linked_mention_list, no_entity_attention)
-#       if not (n_mentions *
-#               MENTION_SIZE >= text_length or n_linked_mentions > n_mentions)
-#   ]
-
-#   return test_list
-
 
 def generate_sequence(vocab_size, max_length, actual_length):
   s = np.random.randint(vocab_size, size=(max_length,))
