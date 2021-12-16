@@ -95,9 +95,13 @@ class Seq2SeqTask(base_task.BaseTask):
       per_token_errors = jnp.not_equal(
           jnp.argmax(loss_helpers['output_logits'], axis=-1),
           batch['target_output_text_ids'])
+      # Ignore errors made in predicting padding tokens
       per_token_errors = per_token_errors * weights
-      exact_match = (per_token_errors.sum(axis=-1) == 0).astype(jnp.int32)
-      exact_match_denom = (weights.sum(axis=-1) > 0).sum()
+
+      per_sample_exact_match = (per_token_errors.sum(axis=-1) == 0).astype(
+          jnp.int32)
+      per_sample_weight = (weights.sum(axis=-1) > 0).astype(jnp.int32)
+      per_sample_exact_match = per_sample_exact_match * per_sample_weight
 
       metrics = {
           'agg': {
@@ -106,8 +110,8 @@ class Seq2SeqTask(base_task.BaseTask):
               'acc': acc,
           },
           'exact_match': {
-              'total': exact_match,
-              'denominator': exact_match_denom,
+              'total': per_sample_exact_match.sum(),
+              'denominator': per_sample_weight.sum(),
           }
       }
 

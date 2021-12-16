@@ -17,10 +17,10 @@
     }
   },
   "seed": 0,
-  "num_train_steps": 64000,
-  "learning_rate": 1e-5,
+  "num_train_steps": 42000,
+  "learning_rate": 3e-5,
   "warmup": true,
-  "warmup_steps": 3840,
+  "warmup_steps": 2520,
   "linear_decay": true,
   "decay_minimum_factor": 0,
   "weight_decay": 0.01,
