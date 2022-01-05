@@ -44,7 +44,7 @@ FileConfig = collections.namedtuple(
 FILES = [
     FileConfig('train.txt', 'train', True),
     FileConfig('test.txt', 'valid', False),
-    FileConfig('eval.txt', 'test', False),
+    # FileConfig('eval.txt', 'test', False),
 ]
 
 EOS_ID = 1
@@ -108,8 +108,7 @@ class Processor:
     return text
 
   def process_line(self, line):
-    sample_id, _, _, source_text, _, _, target_text, _ = line.strip().split(
-        '\t')
+    sample_id, _, _, source_text, _, _, target_text, _ = line[:-1].split('\t')
 
     processed_source_text = self.process_text(source_text)
     if len(processed_source_text) >= self.source_max_length:

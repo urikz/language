@@ -30,7 +30,7 @@
   ],
   "grad_clip": 1.0,
   "ignore_k_nans": 10,
-  "per_device_batch_size": 13,
+  "per_device_batch_size": 6,
   "train_data": [
     {
       "patterns": [
